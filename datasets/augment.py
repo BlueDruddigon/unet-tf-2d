@@ -29,7 +29,7 @@ def make_augmented_ds(img_size, batch_size):
     augmented_train_ds = (
       train_ds.with_options(ignore_order).shuffle(batch_size * 2)
       .map(lambda x, y: (resize_fn(x, img_size), resize_fn(y, img_size)), num_parallel_calls=tf.data.AUTOTUNE)
-      .map(lambda x, y: (augment_fn(x, img_size, training=True), augment_fn(y, img_size, training=True)), num_parallel_calls=tf.data.AUTOTUNE)
+      .map(lambda x, y: (augment_fn(x, training=True), augment_fn(y, training=True)), num_parallel_calls=tf.data.AUTOTUNE)
       .batch(batch_size)
       .prefetch(buffer_size=tf.data.AUTOTUNE)
     )
