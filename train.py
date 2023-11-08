@@ -1,10 +1,9 @@
 import os
 
 import tensorflow as tf
-from keras import callbacks as cbs
-from keras import optimizers
 
-from datasdets.augment import make_augmented_ds
+from datasets.augment import make_augmented_ds
+from losses.dice_ce import dice_ce_loss
 from models.unet import get_model
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
@@ -13,7 +12,7 @@ os.environ['TPU_NAME'] = 'my-tpu'
 # TPU initialization
 try:
     tpu = tf.distribute.cluster_resolver.TPUClusterResolver()
-except ValueError:
+except Exception:
     tpu = None
 
 if tpu:
@@ -43,21 +42,26 @@ with tpu_strategy.scope():
     model = get_model(IMG_SIZE, N_CLASSES, N_CHANNELS)
     
     # LR scheduler
-    lr_scheduler = optimizers.schedules.CosineDecayRestarts(LEARNING_RATE, 1000)
+    lr_scheduler = tf.keras.optimizers.schedules.CosineDecayRestarts(LEARNING_RATE, 1000)
+    
+    # custom loss fn
+    custom_loss_fn = dice_ce_loss(0.4)
     
     model.compile(
-      optimizer=optimizers.Adam(learning_rate=lr_scheduler),
-      loss='sparse_categorical_crossentropy',
+      optimizer=tf.keras.optimizers.Adam(learning_rate=lr_scheduler),
+      loss=custom_loss_fn,
       metrics=['accuracy'],
     )
     
     if tpu:
         save_locally = tf.saved_model.SaveOptions(experimental_io_device='/job:localhost')
-        model_checkpointing = cbs.ModelCheckpoint(filepath=saved_path, save_freq=save_freq, options=save_locally)
+        model_checkpointing = tf.keras.callbacks.ModelCheckpoint(
+          filepath=saved_path, save_freq=save_freq, options=save_locally
+        )
     else:
-        model_checkpointing = cbs.ModelCheckpoint(filepath=saved_path, save_freq=save_freq)
+        model_checkpointing = tf.keras.callbacks.ModelCheckpoint(filepath=saved_path, save_freq=save_freq)
     
     # custom list of callbacks
-    my_cbs = [cbs.EarlyStopping(patience=10), model_checkpointing]
+    my_cbs = [tf.keras.callbacks.EarlyStopping(patience=10), model_checkpointing]
 
 history = model.fit(train_ds, epochs=EPOCHS, validation_data=valid_ds, callbacks=my_cbs)
