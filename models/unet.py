@@ -66,6 +66,4 @@ def get_model(img_size, n_classes, n_channels: int = 1, n_filters: int = 64):
     # output projection
     outputs = Conv2D(n_classes, 1, activation='softmax', padding='same', kernel_initializer='he_normal')(merge9)
     
-    model = Model(inputs=inputs, outputs=outputs)
-    
-    return model
+    return Model(inputs=inputs, outputs=outputs)
