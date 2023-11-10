@@ -2,7 +2,6 @@ import glob
 import os
 
 import numpy as np
-import tensorflow as tf
 import tensorflow_datasets as tfds
 
 
@@ -18,15 +17,16 @@ class Builder(tfds.core.GeneratorBasedBuilder):
         """Returns the dataset metadata."""
         return self.dataset_info_from_configs(
           features=tfds.features.FeaturesDict({
-            'image': tfds.features.Image(shape=(None, None, 1), dtype=tf.float32),
-            'label': tfds.features.Image(shape=(None, None, 1), dtype=tf.uint8, use_colormap=True),
+            'image': tfds.features.Image(shape=(None, None, 1), dtype=np.float32),
+            'label': tfds.features.Image(shape=(None, None, 1), dtype=np.uint8, use_colormap=True),
           }),
           supervised_keys=('image', 'label'),
         )
     
     def _split_generators(self, _: tfds.download.DownloadManager):
         """Returns SplitGenerators."""
-        root_dir = ''  # change this
+        # TODO: change this
+        root_dir = ''
         
         return {
           'train': self._generate_examples(os.path.join(root_dir, 'train')),
@@ -42,6 +42,6 @@ class Builder(tfds.core.GeneratorBasedBuilder):
             data.close()
             
             yield idx, {
-              'image': tf.cast(np.expand_dims(image, axis=-1), tf.float32),
-              'label': tf.cast(np.expand_dims(label, axis=-1), tf.uint8),
+              'image': np.expand_dims(image, axis=-1).astype(np.float32),
+              'label': np.expand_dims(label, axis=-1).astype(np.uint8),
             }
